@@ -2,9 +2,12 @@ use imageagp::colors;
 use imageagp::texture::image::Image;
 use sdl2::render::{Texture,TextureCreator};
 use std::path::PathBuf;
+use std::env;
 
 const WINDOWTITLE:&str = "AGP";
 fn main() {
+    let args:Vec<String> = env::args().collect();
+    dbg!(args);
 
     let mut theimage = PathBuf::new();
     theimage.push("/home/argument/Downloads/2");
