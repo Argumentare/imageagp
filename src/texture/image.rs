@@ -4,28 +4,34 @@ use sdl2::Sdl;
 use sdl2::event::Event;
 use sdl2::image::LoadTexture;
 use std::time::Duration;
-use std::path::PathBuf;
-use crate::{screen::Screen,colors,filemanagment::Details};
+use std::path::{PathBuf,Path};
+use crate::{screen::Screen,colors,filemanagment::{Details,image_metadata}};
 
 
 
-pub struct Image<'a>{
+pub struct CurrentImage<'a>{
     pub path:PathBuf,
     pub screen:Screen<'a>,
+    pub imageindex:usize,
+    pub dirimages:Vec<image_metadata>
 }
 
 
-impl<'a> Image<'a>{
+impl<'a> CurrentImage<'a>{
     pub fn get_wind_info(
         sdl_context:Sdl,
         texture_creator:&'a TextureCreator<WindowContext>,
         imgdetails:Details,
         canvas:Canvas<Window>
-        ) -> Result<Image<'a>,String>{
+        ) -> Result<CurrentImage<'a>,String>{
+        
+            let imagedata = imgdetails.otherimages;
+            let dirimages = imagedata.sort_by(imagedata.data.modified());
+        
+             
             let mut path:PathBuf = PathBuf::new();
-            
             path.push(&imgdetails.args[1]);
-
+            
             if !path.exists(){
                 panic!("not a file");
 
@@ -36,8 +42,10 @@ impl<'a> Image<'a>{
                 Err(e) => {dbg!(path);
                     panic!("failed to load image");},
             };
-            Ok(Image{
+            Ok(CurrentImage{
                 path:path,
+                imageindex:0,
+                dirimages:dirimages,
             screen: Screen{ 
                     sdl_context,
                     texture_creator,
