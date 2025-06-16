@@ -25,7 +25,7 @@ fn main() {
     let mut canvas = window.into_canvas().accelerated().build().unwrap();
     let texture_creator = canvas.texture_creator();
     
-   let mut imajeri = Image::get_wind_info(sdl_context,&texture_creator,imgdetails,canvas);
+   let mut imajeri = CurrentImage::get_wind_info(sdl_context,&texture_creator,imgdetails,canvas);
    imajeri.unwrap().normalrunM(); 
     
     

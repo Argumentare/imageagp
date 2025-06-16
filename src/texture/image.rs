@@ -6,7 +6,7 @@ use sdl2::image::LoadTexture;
 use std::time::Duration;
 use std::path::{PathBuf,Path};
 use crate::{screen::Screen,colors,filemanagment::{Details,image_metadata}};
-
+use std::fs::{self,Metadata};
 
 
 pub struct CurrentImage<'a>{
@@ -24,11 +24,20 @@ impl<'a> CurrentImage<'a>{
         imgdetails:Details,
         canvas:Canvas<Window>
         ) -> Result<CurrentImage<'a>,String>{
-        
-            let imagedata = imgdetails.otherimages;
-            let dirimages = imagedata.sort_by(imagedata.data.modified());
-        
-             
+    
+            let mut images_data = Vec::new();
+            
+            for image in imgdetails.otherimages{
+                let image_data = image_metadata{
+                    path:image.path,
+                    data:image.data  
+                };
+
+                images_data.push(image_data);
+            }
+            
+            images_data.sort_by();
+            
             let mut path:PathBuf = PathBuf::new();
             path.push(&imgdetails.args[1]);
             
@@ -45,7 +54,7 @@ impl<'a> CurrentImage<'a>{
             Ok(CurrentImage{
                 path:path,
                 imageindex:0,
-                dirimages:dirimages,
+                dirimages:images_data,
             screen: Screen{ 
                     sdl_context,
                     texture_creator,
