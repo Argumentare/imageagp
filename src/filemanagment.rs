@@ -4,17 +4,48 @@ use std::path::{PathBuf,Path};
 use glob::{Paths,glob};
 use std::ffi::OsString;
 use std::fs::{self,Metadata};
+use std::cmp::Ordering;
 
 pub struct image_metadata{
         pub path:PathBuf,
         pub data:Metadata,
+        pub loadable:bool,
 }
+
+impl Ord for image_metadata{
+
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        if self.data.modified().unwrap() < other.data.modified().unwrap() {
+            Ordering::Greater
+        } else if self.data.modified().unwrap() > other.data.modified().unwrap() {
+            Ordering::Less
+        } else {
+            Ordering::Equal
+        }
+    }
+}
+
+impl Eq for image_metadata{ }
+
+impl PartialOrd for image_metadata {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for image_metadata {
+    fn eq(&self, other: &Self) -> bool {
+        self.data.modified().unwrap()  == other.data.modified().unwrap() 
+    }
+}
+
+
 
 pub struct Details{
     
     pub args:Vec<OsString>,
     pub otherimages:Vec<image_metadata>,
-    
+        
 }
 
 
@@ -34,7 +65,7 @@ impl Details{
             for pat in buff{
             let path = pat.unwrap();
             let metadata = fs::metadata(path.clone());
-            let image_data = image_metadata{path:path,data:metadata.unwrap()};
+            let image_data = image_metadata{path:path,data:metadata.unwrap(),loadable:true};
             
             imagevec.push(image_data);
             }
