@@ -1,11 +1,13 @@
 use sdl2::render::{Canvas,Texture ,TextureCreator};
 use sdl2::video::{Window,WindowContext};
 use sdl2::Sdl;
+use sdl2::rect::Rect;
 use sdl2::keyboard::Keycode;
 use sdl2::event::Event;
 use sdl2::image::LoadTexture;
 use std::time::Duration;
 use std::path::{PathBuf,Path};
+use std::cmp::Ordering;
 use crate::{screen::Screen,colors,filemanagment::{Details,image_metadata}};
 use std::fs::{self,Metadata};
 
@@ -82,15 +84,42 @@ impl<'a> CurrentImage<'a>{
 
        'main: loop{      
 
-        let texture = self.screen.texture_creator.load_texture(&self.imagesdata[self.imageindex].path);
         
+        let texture = self.screen.texture_creator.load_texture(&self.imagesdata[self.imageindex].path);
+        let canvas_height = self.screen.canvas.viewport().height();
+        let canvas_width = self.screen.canvas.viewport().width();
+
         self.screen.canvas.set_draw_color(colors::sdl::BLACK());
         self.screen.canvas.clear();
         if self.imagesdata[self.imageindex].loadable{
-            self.screen.canvas.copy(&texture.unwrap(), None, None).unwrap();
+            
+            let texture_query =self.screen.texture_creator.load_texture(&self.imagesdata[self.imageindex].path).unwrap().query();
+            let y = (canvas_height as i32 - texture_query.height as i32 ) /2;
+            let x = (canvas_width as i32 -texture_query.width as i32)/2;
+            
+            let mut needed_width = texture_query.width as i32;
+            match texture_query.width.cmp(&canvas_width){
+                    Ordering::Equal=> (),
+                    Ordering::Greater => { let z = f64::sqrt(canvas_width as f64/texture_query.width as f64);
+                                        needed_width = (canvas_width as f64 *z as f64) as i32;},
+                    Ordering::Less =>{let z = f64::sqrt(canvas_width as f64/texture_query.width as f64);
+                                         needed_width = (canvas_width as f64*z as f64) as i32}
+            }
+            
+            let mut needed_height = texture_query.height as i32;
+            match texture_query.height.cmp(&canvas_height){
+                Ordering::Equal=> (),   
+                Ordering::Greater => { let z = f64::sqrt(texture_query.height as f64/canvas_height as f64);                                            needed_height = (texture_query.height as f64*z as f64) as i32;},                    
+                Ordering::Less =>{let z = f64::sqrt(canvas_height as f64/texture_query.height as f64);
+                                    needed_height = (canvas_height as f64*z as f64) as i32}
+            }
+
+
+            
+            self.screen.canvas.copy(&texture.unwrap(), None, Rect::new(x,y,needed_width.try_into().unwrap(),needed_height.try_into().unwrap())).unwrap();
         }else
         {
-
+            //TODO font for error when image is not loading with specific explication 
         }
 
         for event in self.screen.sdl_context.event_pump().unwrap().poll_iter(){
