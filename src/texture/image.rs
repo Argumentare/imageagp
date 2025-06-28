@@ -2,12 +2,13 @@ use sdl2::render::{Canvas,Texture ,TextureCreator};
 use sdl2::video::{Window,WindowContext};
 use sdl2::Sdl;
 use sdl2::rect::Rect;
-use sdl2::keyboard::Keycode;
+use sdl2::keyboard::{Keycode,Mod};
 use sdl2::event::Event;
 use sdl2::image::LoadTexture;
 use std::time::Duration;
 use std::path::{PathBuf,Path};
 use std::cmp::Ordering;
+use std::env::current_dir;
 use crate::{screen::Screen,colors,filemanagment::{Details,image_metadata}};
 use std::fs::{self,Metadata};
 
@@ -41,8 +42,8 @@ impl<'a> CurrentImage<'a>{
                     path:image.path,
                     data:image.data,  
                     loadable:true,
+                    scale:1,
                 };
-
                 images_data.push(image_data);
             }
             
@@ -93,43 +94,73 @@ impl<'a> CurrentImage<'a>{
         self.screen.canvas.clear();
         if self.imagesdata[self.imageindex].loadable{
             
+            let scale = self.imagesdata[self.imageindex].scale;
             let texture_query =self.screen.texture_creator.load_texture(&self.imagesdata[self.imageindex].path).unwrap().query();
-            let y = (canvas_height as i32 - texture_query.height as i32 ) /2;
-            let x = (canvas_width as i32 -texture_query.width as i32)/2;
             
+            let mut needed_height = texture_query.height as i32; 
             let mut needed_width = texture_query.width as i32;
-            match texture_query.width.cmp(&canvas_width){
-                    Ordering::Equal=> (),
-                    Ordering::Greater => { let z = f64::sqrt(canvas_width as f64/texture_query.width as f64);
-                                        needed_width = (canvas_width as f64 *z as f64) as i32;},
-                    Ordering::Less =>{let z = f64::sqrt(canvas_width as f64/texture_query.width as f64);
-                                         needed_width = (canvas_width as f64*z as f64) as i32}
-            }
-            
-            let mut needed_height = texture_query.height as i32;
-            match texture_query.height.cmp(&canvas_height){
-                Ordering::Equal=> (),   
-                Ordering::Greater => { let z = f64::sqrt(texture_query.height as f64/canvas_height as f64);                                            needed_height = (texture_query.height as f64*z as f64) as i32;},                    
-                Ordering::Less =>{let z = f64::sqrt(canvas_height as f64/texture_query.height as f64);
-                                    needed_height = (canvas_height as f64*z as f64) as i32}
-            }
+    /*        let mut area_coefficient = 0.0;
+            let image_area = (texture_query.height as f64*texture_query.width as f64) as i32 ;
+            let canvas_area = (canvas_height as f64 *canvas_width as f64) as i32;
 
+            match image_area.cmp(&canvas_area){
+                Ordering::Equal => (),
+                Ordering::Greater =>{
+                                    area_coefficient = canvas_area as f64/image_area as f64;
+                                  needed_width = (canvas_area as f64/texture_query.height as f64 *area_coefficient * scale as f64) as i32;    
+                                  needed_height = (canvas_area as f64/texture_query.width as f64 *area_coefficient * scale as f64) as i32;    
+                                },  
+                Ordering::Less =>{area_coefficient = image_area as f64/canvas_area as f64;
+                                  needed_width = (image_area as f64/canvas_height as f64 *area_coefficient  * scale as f64) as i32;    
+                                  needed_height = (image_area as f64/canvas_width as f64 *area_coefficient * scale as f64) as i32;    
+                                  },
+            }*/
+            'imagesize: for i in 1..canvas_width{
+               if texture_query.width > canvas_width || texture_query.height > canvas_height{
+                    let height = texture_query.height as i32  / i as i32;
+                    let width = texture_query.width  as i32 / i as i32;
 
+                    if height < canvas_height as i32 && width < canvas_width as i32{
+                        break 'imagesize;
+                    }
+                    
+                    needed_height = height * scale;
+                    needed_width = width * scale;
+
+               }else
+               {
+                    let height = texture_query.height  as i32* i as i32;
+                    let width = texture_query.width  as i32 * i as i32;
+
+                    if height > canvas_height as i32 && width < canvas_width as i32  || width > canvas_width as i32  && height < canvas_height as i32{
+                        break 'imagesize;
+                    }
+
+                    needed_height = height * scale;
+                    needed_width = width  * scale;
+               }
+            }
+            let y = (canvas_height as i32 - needed_height ) /2;
+            let x = (canvas_width as i32 - needed_width )/2;
+        
             
             self.screen.canvas.copy(&texture.unwrap(), None, Rect::new(x,y,needed_width.try_into().unwrap(),needed_height.try_into().unwrap())).unwrap();
-        }else
-        {
-            //TODO font for error when image is not loading with specific explication 
         }
-
         for event in self.screen.sdl_context.event_pump().unwrap().poll_iter(){
 
             match event{
                 Event::Quit{..} => break 'main,
-                Event::KeyDown{keycode: Some(Keycode::Right),..} =>if self.imageindex < self.imagesdata.len() -1
-                                                                    {self.imageindex += 1;},
+                Event::KeyDown{keycode: Some(Keycode::Right),..} => if self.imageindex < self.imagesdata.len() -1
+                                                                    {self.imagesdata[self.imageindex].scale =1;
+                                                                        self.imageindex += 1;},
                 Event::KeyDown{keycode: Some(Keycode::Left),..} =>if self.imageindex > 0 
-                                                                    {self.imageindex -= 1;},
+                                                                    {self.imagesdata[self.imageindex].scale = 1;                                                                                                    self.imageindex -= 1;},
+                Event::KeyDown{keycode:Some(Keycode::Equals),keymod,..} =>if keymod.contains(Mod::LSHIFTMOD) &&self.imagesdata[self.imageindex].loadable {
+                                                                        self.imagesdata[self.imageindex].scale +=1;    
+                                                                    },
+                Event::KeyDown{keycode: Some(Keycode::MINUS),..} => if self.imagesdata[self.imageindex].loadable && self.imagesdata[self.imageindex].scale > 1{
+                                                                      self.imagesdata[self.imageindex].scale -= 1;
+                                                                    },
                 _ => {},
             }
         }

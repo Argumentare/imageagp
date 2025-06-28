@@ -10,6 +10,7 @@ pub struct image_metadata{
         pub path:PathBuf,
         pub data:Metadata,
         pub loadable:bool,
+        pub scale:i32,
 }
 
 impl Ord for image_metadata{
@@ -65,8 +66,8 @@ impl Details{
             for pat in buff{
             let path = pat.unwrap();
             let metadata = fs::metadata(path.clone());
-            let image_data = image_metadata{path:path,data:metadata.unwrap(),loadable:true};
-            
+            let image_data = image_metadata{path:path,data:metadata.unwrap(),loadable:true,scale:1};
+           
             imagevec.push(image_data);
             }
         }
