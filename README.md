@@ -2,5 +2,9 @@
 
 ## Features
 "-" -Zoom out
+
 "+" -Zoom in
-"<" or ">" -Change image(this includes all images from the directory you opened the photo from). Also photos are sorted by modified time.
+
+"<" or ">" -Change image (this includes all images from the directory you opened the photo from).
+
+Photos are sorted by modified time.
