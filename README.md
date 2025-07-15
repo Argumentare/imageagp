@@ -1,1 +1,1 @@
-#*Image viewer wrote in Rust using SDL2*
+# *Image viewer wrote in Rust using SDL2*
