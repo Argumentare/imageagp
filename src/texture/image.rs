@@ -115,31 +115,8 @@ impl<'a> CurrentImage<'a>{
                                   needed_height = (image_area as f64/canvas_width as f64 *area_coefficient * scale as f64) as i32;    
                                   },
             }*/
-            'imagesize: for i in 1..canvas_width{
-               if texture_query.width > canvas_width || texture_query.height > canvas_height{
-                    let height = texture_query.height as i32  / i as i32;
-                    let width = texture_query.width  as i32 / i as i32;
-
-                    if height < canvas_height as i32 && width < canvas_width as i32{
-                        break 'imagesize;
-                    }
-                    
-                    needed_height = height * scale;
-                    needed_width = width * scale;
-
-               }else
-               {
-                    let height = texture_query.height  as i32* i as i32;
-                    let width = texture_query.width  as i32 * i as i32;
-
-                    if height > canvas_height as i32 && width < canvas_width as i32  || width > canvas_width as i32  && height < canvas_height as i32{
-                        break 'imagesize;
-                    }
-
-                    needed_height = height * scale;
-                    needed_width = width  * scale;
-               }
-            }
+            needed_height = texture_query.height as i32 * scale;
+            needed_width = texture_query.width as i32 * scale;
             let y = (canvas_height as i32 - needed_height ) /2;
             let x = (canvas_width as i32 - needed_width )/2;
         
